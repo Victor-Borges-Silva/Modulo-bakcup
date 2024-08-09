@@ -1,18 +1,18 @@
 # Data source para buscar a chave KMS gerenciada pela AWS com o alias 'aws/backup'
-data "aws_kms_key" "by_key_arn" {
+data "aws_kms_key" "kms_key_arn" {
   key_id = "arn:aws:kms:us-west-1:087381958847:key/2cd17e51-8461-4170-b7e7-de4c8524c1d6"
 }
 
 # Recurso do Backup Vault
-resource "aws_backup_vault" "Teste_cofre_ec2" {
-  name          = "Teste_cofre_ec2"
-  kms_key_arn   = data.aws_kms_key.by_key_arn.arn
+resource "aws_backup_vault" "cofre_backup" {
+  name          = var.nome_cofre
+  kms_key_arn   = data.aws_kms_key.kms_key_arn.arn
   force_destroy = true
 }
 
 # Recurso para aplicar a policy ao Backup Vault
 resource "aws_backup_vault_policy" "vault_policy" {
-  backup_vault_name = aws_backup_vault.Teste_cofre_ec2.name
+  backup_vault_name = aws_backup_vault.cofre_backup.name
 
   policy = <<POLICY
   {
@@ -37,25 +37,27 @@ resource "aws_backup_vault_policy" "vault_policy" {
 }
 
 #Recuso para criar o plano de Backup e suas regras
-resource "aws_backup_plan" "Teste_plano_backup" {
-  name = "Teste_plano_backup"
+resource "aws_backup_plan" "plano_backup" {
+  name = var.nome_plano_backup
 
   rule {
-    rule_name         = "Teste_plano_backup_ec2"
-    target_vault_name = aws_backup_vault.Teste_cofre_ec2.name
-    schedule          = "cron(0 12 * * ? *)"
+    rule_name         = var.nome_regra
+    target_vault_name = aws_backup_vault.cofre_backup.name
+    schedule          = var.agendamento_backup
+    start_window      = 60  #Especifique(em minutos) o período em que o plano de backup será iniciado, caso não comece no horário especificado.
+    completion_window = 180 #Defina(em minutos) o período durante o qual o backup deve ser concluído antes de retornar qualquer erro por timeout.
 
     lifecycle {
-      delete_after = 7
+      delete_after = var.quantidade_dias_para_delecao
     }
   }
 }
 
 # Seleção de recursos com base em tags
-resource "aws_backup_selection" "example" {
-  name         = "tf_example_backup_selection"
-  plan_id      = aws_backup_plan.Teste_plano_backup.id
-  iam_role_arn = aws_iam_role.Teste_role_backup.arn
+resource "aws_backup_selection" "selecao_alvo_tag" {
+  name         = var.nome_selecao_alvo_tag
+  plan_id      = aws_backup_plan.plano_backup.id
+  iam_role_arn = aws_iam_role.role_backup.arn
 
   selection_tag {
     type  = "STRINGEQUALS"
@@ -65,8 +67,8 @@ resource "aws_backup_selection" "example" {
 }
 
 # Recurso do IAM Role para o plano de backup
-resource "aws_iam_role" "Teste_role_backup" {
-  name = "Teste_role_backup"
+resource "aws_iam_role" "role_backup" {
+  name = var.nome_role_backup
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
