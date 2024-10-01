@@ -65,27 +65,3 @@ resource "aws_backup_selection" "selecao_alvo_tag" {
     value = "true"
   }
 }
-
-# Recurso do IAM Role para o plano de backup
-resource "aws_iam_role" "role_backup" {
-  name = var.nome_role_backup
-
-  assume_role_policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "backup.amazonaws.com"
-        },
-        "Action" : "sts:AssumeRole"
-      }
-    ]
-  })
-
-  # Anexa a política gerenciada necessária para backup
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup",
-    "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores"
-  ]
-}
