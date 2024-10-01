@@ -57,7 +57,7 @@ resource "aws_backup_plan" "plano_backup" {
 resource "aws_backup_selection" "selecao_alvo_tag" {
   name         = var.nome_selecao_alvo_tag
   plan_id      = aws_backup_plan.plano_backup.id
-  iam_role_arn = aws_iam_role.role_backup.arn
+  iam_role_arn = var.iam_role_arn_backup
 
   selection_tag {
     type  = "STRINGEQUALS"

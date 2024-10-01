@@ -36,3 +36,9 @@ variable "nome_selecao_alvo_tag" {
   default     = "Default_TF"
   description = "Nome da seleção de alvos feita por tags"
 }
+
+variable "iam_role_arn_backup" {
+  type        = string
+  default     = "Default_TF"
+  description = "ARN da role do modulo IAM"
+}
