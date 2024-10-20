@@ -7,7 +7,7 @@ data "aws_kms_key" "kms_key_arn" {
 resource "aws_backup_vault" "cofre_backup" {
   name          = var.nome_cofre
   kms_key_arn   = data.aws_kms_key.kms_key_arn.arn
-  force_destroy = true
+  force_destroy = var.force_destruir
 }
 
 # Recurso para aplicar a policy ao Backup Vault
@@ -44,8 +44,8 @@ resource "aws_backup_plan" "plano_backup" {
     rule_name         = var.nome_regra
     target_vault_name = aws_backup_vault.cofre_backup.name
     schedule          = var.agendamento_backup
-    start_window      = 60  #Especifique(em minutos) o período em que o plano de backup será iniciado, caso não comece no horário especificado.
-    completion_window = 180 #Defina(em minutos) o período durante o qual o backup deve ser concluído antes de retornar qualquer erro por timeout.
+    start_window      = var.inicio_manutencao #Especifique(em minutos) o período em que o plano de backup será iniciado, caso não comece no horário especificado.
+    completion_window = var.janela_manutencao #Defina(em minutos) o período durante o qual o backup deve ser concluído antes de retornar qualquer erro por timeout.
 
     lifecycle {
       delete_after = var.quantidade_dias_para_delecao
@@ -60,8 +60,8 @@ resource "aws_backup_selection" "selecao_alvo_tag" {
   iam_role_arn = var.iam_role_arn_backup
 
   selection_tag {
-    type  = "STRINGEQUALS"
-    key   = "Backup"
-    value = "true"
+    type  = var.selecao_recurso_tag_type
+    key   = var.selecao_recurso_tag_key
+    value = var.selecao_recurso_tag_value
   }
 }
